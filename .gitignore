@@ -1,0 +1,13 @@
+# Generated repository artifacts
+public/
+state.json
+
+# Python & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Flatpak temporary bundles
+*.flatpak
+*.flatpakrepo

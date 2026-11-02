@@ -1,0 +1,72 @@
+name: Sync Storytold Craft Suite to Flatpak OSTree
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Daily at 06:00 UTC
+  workflow_dispatch:   # Manual trigger
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/**'
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  sync-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Flatpak and OSTree
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak ostree
+
+      - name: Restore OSTree Repository Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            public/repo
+            state.json
+          key: ostree-repo-v1-${{ github.run_id }}
+          restore-keys: |
+            ostree-repo-v1-
+
+      - name: Run Release Sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/sync_craft_repo.py --base-url "https://jefter5549.github.io/craft-flatpak-repo/"
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
