@@ -2,8 +2,8 @@ name: Sync Storytold Craft Suite to Flatpak OSTree
 
 on:
   schedule:
-    - cron: '0 6 * * *' # Daily at 06:00 UTC
-  workflow_dispatch:   # Manual trigger
+    - cron: '0 */3 * * *' # Every 3 hours
+  workflow_dispatch:     # Manual trigger
   push:
     branches:
       - main
@@ -54,19 +54,23 @@ jobs:
             ostree-repo-v1-
 
       - name: Run Release Sync
+        id: sync
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python3 scripts/sync_craft_repo.py --base-url "https://jefter5549.github.io/craft-flatpak-repo/"
 
       - name: Setup GitHub Pages
+        if: steps.sync.outputs.has_changes == 'true' || github.event_name != 'schedule'
         uses: actions/configure-pages@v5
 
       - name: Upload Pages Artifact
+        if: steps.sync.outputs.has_changes == 'true' || github.event_name != 'schedule'
         uses: actions/upload-pages-artifact@v3
         with:
           path: public/
 
       - name: Deploy to GitHub Pages
+        if: steps.sync.outputs.has_changes == 'true' || github.event_name != 'schedule'
         id: deployment
         uses: actions/deploy-pages@v4

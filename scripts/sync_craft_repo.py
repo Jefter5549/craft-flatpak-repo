@@ -616,7 +616,12 @@ def main():
     with open(args.state_file, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2)
 
-    print("[✓] Synchronization complete!")
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a", encoding="utf-8") as f:
+            f.write(f"has_changes={'true' if imported_any else 'false'}\n")
+
+    print(f"[✓] Synchronization complete! Changes imported: {imported_any}")
 
 
 if __name__ == "__main__":
